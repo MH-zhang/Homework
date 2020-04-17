@@ -1,18 +1,24 @@
 package com.swufe.homework;
 
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class RateActivity extends AppCompatActivity {
     EditText rmb;
     TextView show;
+     float dollarRate=1/6.7f;
+     float euroRate=1/11f;
+     float wonRate =500;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,24 +39,58 @@ public class RateActivity extends AppCompatActivity {
         float val=0;
 
         if(btn.getId()==R.id.btn_dollar){
-            val =r*(1/6.7f);
+            val =r*dollarRate;
 
         }else if(btn.getId()==R.id.btn_euro){
-            val =r*(1/11f);
+            val =r*euroRate;
 
         }else{
-             val =r*500;
+             val =r*wonRate;
 
         }
         float v =(float)(Math.round(val*100))/100;
         show.setText(String.valueOf(v));
     }
     public void openOne(View btn){
-        Intent hello=new Intent(this,SecondActivity.class);
-        Intent web =new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.jd.com"));
-        Intent intent =new Intent(Intent.ACTION_DIAL, Uri.parse("tel:5899259"));
+        openConfig();
 
-        startActivity(intent);
     }
 
+
+
+    private void openConfig() {
+        Intent config = new Intent(this, ConfigActivity.class);
+        config.putExtra("dollar_rate_key", dollarRate);
+        config.putExtra("euro_rate_key", euroRate);
+        config.putExtra("won_rate_key", wonRate);
+        startActivityForResult(config, 1);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.rate,menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if(item.getItemId()==R.id.menu_set){
+            openConfig();
+
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+
+        if (requestCode == 1 && resultCode == 2) {
+            Bundle bundle = data.getExtras();
+            dollarRate = bundle.getFloat("key_dollar", 0.1f);
+            euroRate = bundle.getFloat("key_euro", 0.2f);
+            wonRate = bundle.getFloat("key_won", 0.3f);
+
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
 }
