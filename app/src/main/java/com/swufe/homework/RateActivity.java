@@ -17,6 +17,14 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+
 public class RateActivity extends AppCompatActivity implements Runnable {
 
     EditText rmb;
@@ -46,8 +54,8 @@ public class RateActivity extends AppCompatActivity implements Runnable {
         Thread t =new Thread(this);//一定记得this
         t.start();
 
-        handler =new Handler(){
-            public void handleMessage(@NonNull Message msg) {
+        handler =new Handler(){//默认为空，所以下面重写方法
+            public void handleMessage( Message msg) {
                 if(msg.what==5){
                     String str = (String) msg.obj;
                     show.setText(str);
@@ -152,5 +160,36 @@ public class RateActivity extends AppCompatActivity implements Runnable {
         //内容发送到队列中
         handler.sendMessage(msg);
 
+        //获取网络数据
+        URL url =null;
+        try {
+             url =new URL("http://www.usd-cny.com/icbc.htm");
+            HttpURLConnection http = (HttpURLConnection) url.openConnection();
+            InputStream in =http.getInputStream();
+
+            String heml =inputStream2String(in);
+
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
     }
-}
+    private String inputStream2String(InputStream inputStream) throws IOException {
+        final int bufferSize = 1024;
+        final char[] buffer = new char[bufferSize];
+        final StringBuilder out = new StringBuilder();
+        Reader in = new InputStreamReader(inputStream,"gb2312");
+        for(;;){
+            int rsz = in.read(buffer, 0, buffer.length) ;
+            if(rsz<0)
+                break;
+                out.append(buffer, 0, rsz);
+            }
+            return out.toString();
+        }
+
+    }
+
