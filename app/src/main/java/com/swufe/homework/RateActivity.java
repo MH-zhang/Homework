@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -13,23 +14,25 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 public class RateActivity extends AppCompatActivity implements Runnable {
 
     EditText rmb;
     TextView show;
     Handler handler;
+
+    private  final  String TAG="Rate";
 
      float dollarRate=0.1f;
      float euroRate=0.2f;
@@ -54,11 +57,20 @@ public class RateActivity extends AppCompatActivity implements Runnable {
         Thread t =new Thread(this);//一定记得this
         t.start();
 
-        handler =new Handler(){//默认为空，所以下面重写方法
-            public void handleMessage( Message msg) {
+
+        handler = new Handler(){
+            @Override
+            public void handleMessage(Message msg) {
                 if(msg.what==5){
-                    String str = (String) msg.obj;
-                    show.setText(str);
+                    Bundle bdl = (Bundle) msg.obj;
+                    dollarRate = bdl.getFloat("dollar-rate");
+                    euroRate = bdl.getFloat("euro-rate");
+                    wonRate = bdl.getFloat("won-rate");
+                    Log.i(TAG, "handleMessage: dollarRate:" + dollarRate);
+                    Log.i(TAG, "handleMessage: euroRate:" + euroRate);
+                    Log.i(TAG, "handleMessage: wonRate:" + wonRate);
+
+                    Toast.makeText(RateActivity.this, "汇率已更新", Toast.LENGTH_SHORT).show();
                 }
                 super.handleMessage(msg);
             }
@@ -112,7 +124,7 @@ public class RateActivity extends AppCompatActivity implements Runnable {
     }
 
     @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+    public boolean onOptionsItemSelected( MenuItem item) {
         if(item.getItemId()==R.id.menu_set){
             openConfig();
 
@@ -121,7 +133,7 @@ public class RateActivity extends AppCompatActivity implements Runnable {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode,  Intent data) {
 
         if (requestCode == 1 && resultCode == 2) {
             Bundle bundle = data.getExtras();
@@ -145,38 +157,78 @@ public class RateActivity extends AppCompatActivity implements Runnable {
 
     @Override
     public void run() {
-        for (int i=1;i<6;i++){
-            try {
-                Thread.sleep(2000);
-            }catch (InterruptedException e){
-                e.printStackTrace();
-            }
-        }
-        //获取Msg对象用于返回主线程
-        Message msg =handler.obtainMessage(5);
-        //msg.what= 5 ;
-        msg.obj="Hello from run()";
 
-        //内容发送到队列中
-        handler.sendMessage(msg);
+            Bundle bundle = new Bundle();
+            //获取Msg对象用于返回主线程
+            Message msg = handler.obtainMessage(5);
+            //msg.what= 5 ;
+            //msg.obj="Hello from run()";
+            msg.obj = bundle;
 
-        //获取网络数据
-        URL url =null;
+            //内容发送到队列中
+            handler.sendMessage(msg);
+
+
+            //获取网络数据
+        /*URL url =null;
+        Document doc = null;
+        String html = null;
         try {
-             url =new URL("http://www.usd-cny.com/icbc.htm");
+             url =new URL("http://www.usd-cny.com/bankofchina.htm");
             HttpURLConnection http = (HttpURLConnection) url.openConnection();
             InputStream in =http.getInputStream();
 
-            String heml =inputStream2String(in);
+             html =inputStream2String(in);
+
 
         } catch (MalformedURLException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
+        }*/
+
+
+            Document doc = null;
+
+            try {
+                doc = Jsoup.connect("http://www.usd-cny.com/bankofchina.htm").get();
+                //doc =Jsoup.parse(html);
+                Log.i(TAG, "run:" + doc.title());
+                Elements tables = doc.getElementsByTag("table");
+                Element table = tables.get(0);
+                Elements tds = table.getElementsByTag("td");
+                for (int i = 0; i < tds.size(); i += 6) {
+                    Element td1 = tds.get(i);
+                    Element td2 = tds.get(i + 5);
+                    String str1 = td1.text();
+                    String val = td2.text();
+                    Log.i(TAG, "run: " + str1 + "==>" + val);
+                    float v = 100f / Float.parseFloat(val);
+                    if ("美元".equals(str1)) {
+                        bundle.putFloat("dollar-rate", v);
+                    } else if ("欧元".equals(str1)) {
+                        bundle.putFloat("euro-rate", v);
+                    } else if ("韩元".equals(str1)) {
+                        bundle.putFloat("won-rate", v);
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
 
-    }
+
+
+
+
+
+
+
+
+
+
+
     private String inputStream2String(InputStream inputStream) throws IOException {
         final int bufferSize = 1024;
         final char[] buffer = new char[bufferSize];
