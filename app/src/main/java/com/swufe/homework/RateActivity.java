@@ -1,7 +1,11 @@
 package com.swufe.homework;
 
+import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -13,12 +17,15 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-public class RateActivity extends AppCompatActivity {
+public class RateActivity extends AppCompatActivity implements Runnable {
+
     EditText rmb;
     TextView show;
-     float dollarRate=1/6.7f;
-     float euroRate=1/11f;
-     float wonRate =500;
+    Handler handler;
+
+     float dollarRate=0.1f;
+     float euroRate=0.2f;
+     float wonRate =0.3f;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,6 +34,30 @@ public class RateActivity extends AppCompatActivity {
 
         rmb = findViewById(R.id.rmb);
         show = findViewById(R.id.showOut);
+
+        //获取SP里地保存数据
+        SharedPreferences sharedPreferences =getSharedPreferences("myrate", Activity.MODE_PRIVATE);//myrate存储数据的空间
+        //SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);获取数据第二种方法，高版本SDK才能用
+        dollarRate=sharedPreferences.getFloat("dollar_rate",0.0f);
+        euroRate=sharedPreferences.getFloat("euro_rate",0.0f);
+        wonRate=sharedPreferences.getFloat("won_rate",0.0f);//默认值
+
+        //开启子线程
+        Thread t =new Thread(this);//一定记得this
+        t.start();
+
+        handler =new Handler(){
+            public void handleMessage(@NonNull Message msg) {
+                if(msg.what==5){
+                    String str = (String) msg.obj;
+                    show.setText(str);
+                }
+                super.handleMessage(msg);
+            }
+        };
+
+
+
     }
     public void onClick(View btn){
         String str =rmb.getText().toString();
@@ -90,7 +121,36 @@ public class RateActivity extends AppCompatActivity {
             euroRate = bundle.getFloat("key_euro", 0.2f);
             wonRate = bundle.getFloat("key_won", 0.3f);
 
+            //将新设置的汇率写到SP
+            SharedPreferences sharedPreferences =getSharedPreferences("myrate", Activity.MODE_PRIVATE);
+            SharedPreferences.Editor editor =sharedPreferences.edit();
+            editor.putFloat("dollar_rate",dollarRate);
+            editor.putFloat("euro_rate",euroRate);
+            editor.putFloat("won_rate",wonRate);
+
+            //保存
+            editor.commit();
+
         }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    @Override
+    public void run() {
+        for (int i=1;i<6;i++){
+            try {
+                Thread.sleep(2000);
+            }catch (InterruptedException e){
+                e.printStackTrace();
+            }
+        }
+        //获取Msg对象用于返回主线程
+        Message msg =handler.obtainMessage(5);
+        //msg.what= 5 ;
+        msg.obj="Hello from run()";
+
+        //内容发送到队列中
+        handler.sendMessage(msg);
+
     }
 }
