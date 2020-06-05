@@ -110,11 +110,8 @@ public class RateActivity extends AppCompatActivity implements Runnable {
 
 
     private void openConfig() {
-        Intent config = new Intent(this, ConfigActivity.class);
-        config.putExtra("dollar_rate_key", dollarRate);
-        config.putExtra("euro_rate_key", euroRate);
-        config.putExtra("won_rate_key", wonRate);
-        startActivityForResult(config, 1);
+        Intent list = new Intent(this, MyList2Activity.class);
+        startActivity(list);
     }
 
     @Override
@@ -127,6 +124,14 @@ public class RateActivity extends AppCompatActivity implements Runnable {
     public boolean onOptionsItemSelected( MenuItem item) {
         if(item.getItemId()==R.id.menu_set){
             openConfig();
+        }else if(item.getItemId()==R.id.open_list){
+            //打开列表窗口
+            Intent config = new Intent(this, ConfigActivity.class);
+            config.putExtra("dollar_rate_key", dollarRate);
+            config.putExtra("euro_rate_key", euroRate);
+            config.putExtra("won_rate_key", wonRate);
+            startActivityForResult(config, 1);
+
         }
         return super.onOptionsItemSelected(item);
     }
