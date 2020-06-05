@@ -37,6 +37,7 @@ public class RateActivity extends AppCompatActivity implements Runnable {
      float dollarRate=0.1f;
      float euroRate=0.2f;
      float wonRate =0.3f;
+     String updateDate;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,19 +54,18 @@ public class RateActivity extends AppCompatActivity implements Runnable {
         euroRate=sharedPreferences.getFloat("euro_rate",0.0f);
         wonRate=sharedPreferences.getFloat("won_rate",0.0f);//默认值
 
-        //开启子线程
-        Thread t =new Thread(this);//一定记得this
-        t.start();
 
 
         handler = new Handler(){
             @Override
             public void handleMessage(Message msg) {
+
                 if(msg.what==5){
                     Bundle bdl = (Bundle) msg.obj;
                     dollarRate = bdl.getFloat("dollar-rate");
                     euroRate = bdl.getFloat("euro-rate");
                     wonRate = bdl.getFloat("won-rate");
+
                     Log.i(TAG, "handleMessage: dollarRate:" + dollarRate);
                     Log.i(TAG, "handleMessage: euroRate:" + euroRate);
                     Log.i(TAG, "handleMessage: wonRate:" + wonRate);
@@ -127,7 +127,6 @@ public class RateActivity extends AppCompatActivity implements Runnable {
     public boolean onOptionsItemSelected( MenuItem item) {
         if(item.getItemId()==R.id.menu_set){
             openConfig();
-
         }
         return super.onOptionsItemSelected(item);
     }
@@ -174,7 +173,7 @@ public class RateActivity extends AppCompatActivity implements Runnable {
         Document doc = null;
         String html = null;
         try {
-             url =new URL("http://www.usd-cny.com/bankofchina.htm");
+             url =new URL("http://www.usd-cny.com/bankofchina.html");
             HttpURLConnection http = (HttpURLConnection) url.openConnection();
             InputStream in =http.getInputStream();
 
@@ -191,7 +190,7 @@ public class RateActivity extends AppCompatActivity implements Runnable {
             Document doc = null;
 
             try {
-                doc = Jsoup.connect("http://www.usd-cny.com/bankofchina.htm").get();
+                doc = Jsoup.connect("").get();
                 //doc =Jsoup.parse(html);
                 Log.i(TAG, "run:" + doc.title());
                 Elements tables = doc.getElementsByTag("table");
